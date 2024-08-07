@@ -54,8 +54,11 @@ let sum = 0;
 for (let i = 0; i < MAX_X; i++) {
   for (let k = 0; k < MAX_Y; k++) {
     const gear = grid[i][k];
-      if (gear && gear?.type === 'symbol') {
+      if (gear && gear?.type === 'symbol' && gear.value === '*' && gear.partNumbers.length === 2) {
         const power = gear?.partNumbers?.reduce((numberSum, number) => {
+          if (numberSum > 0) {
+            return numberSum * number.value;
+          }
           return numberSum + number.value;
         }, 0) || 0;
         sum += power;
