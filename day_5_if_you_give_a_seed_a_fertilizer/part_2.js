@@ -4,7 +4,7 @@ const fs = require('node:fs');
 let data;
 
 try {
-  data = fs.readFileSync('./sample.txt', 'utf8');
+  data = fs.readFileSync('./input.txt', 'utf8');
 } catch (err) {
   console.error(err);
   throw err;
@@ -19,12 +19,7 @@ parseSeedList(seeds);
 populateMapList(mapList);
 
 const minLocationList = seedsRangeToMinLocation();
-
 console.log(minLocationList)
-
-
-const locationsSorted = minLocationList.sort((mapValueA, mapValueB) => mapValueA - mapValueB);
-console.log(locationsSorted[0])
 
 function seedsRangeToMinLocation() {
   const ranges = [];
@@ -35,60 +30,80 @@ function seedsRangeToMinLocation() {
   ranges.sort((a, b) => a[0] - b[0]);
 
   const minLocationList = ranges.reduce((minLocation, seedRange) => {
-    let min = null;
 
-    console.log(seedRange);
     for (let i = seedRange[0]; i < (seedRange[0] + seedRange[1]); i++) {
       const location = seedToLocation(i);
-      if (location < min || min === null) min = location
+
+      if (location < minLocation) minLocation = location
     }
 
-    if (min < minLocation || minLocation === null) return min
-    
     console.log(minLocation);
     return minLocation
-  }, null)
+  }, 100000000000000)
 
   return minLocationList;
 }
 
-function seedToLocation(seed) {
+function seedToLocation(seed, debug = false) {
   const seedMappingArray = new Array(mapList.length + 1).fill(null);
   seedMappingArray[0] = seed
 
   for (let i = 0; i < mapList.length; i++) {
-    let listLength = mapList[i].length - 1;
+    let listLength = mapList[i].length - 1 ;
     let low = 0;
     let high = listLength;
     
-    while (seedMappingArray[i + 1] === null && low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const row = mapList[i][mid];
-      const lastMappedValue = seedMappingArray[i];
-    
-      const startRange = row[1];
-      const endRange = row[1] + row[2];
-    
-      if (lastMappedValue > endRange) {
-        high = mid - 1;
-      } else if (lastMappedValue < startRange) {
-        low = mid + 1;
-      } else {
-        console.log('row')
-        console.log(row);
-        console.log(lastMappedValue);
-        seedMappingArray[i + 1] = row[0] + lastMappedValue - row[1];
-        break;
-      }
-    }
-    
-    if (seedMappingArray[i + 1] === null) {
-      console.log('aqui')
+    const binarySearchResult = recursiveFunction(mapList[i], seedMappingArray[i], low, high, debug, 0);
+
+    if (binarySearchResult !== null) {
+      seedMappingArray[i + 1] = binarySearchResult;
+    } else {
       seedMappingArray[i + 1] = seedMappingArray[i];
     }
   }
 
-  return seedMappingArray;
+  return seedMappingArray[seedMappingArray.length - 1];
+}
+
+function recursiveFunction(arr, x, start, end, debug = false, count = 0) {
+  if (debug) {
+    console.log('start');
+    console.log('count: ', count)
+    console.log('start: ', start);
+    console.log('end: ', end);
+  }
+  // Base Condition
+  if (start > end) return x;
+
+  // Find the middle index
+  let mid = Math.floor((start + end) / 2);
+  if (debug)
+  console.log('mid: ', mid)
+
+  const row = arr[mid];
+
+  const startRange = row[1];
+  const endRange = row[1] + row[2];
+
+  if (debug) {
+    console.log('ranges')
+    console.log('x: ', x)
+    console.log('startRange: ', startRange)
+    console.log('endRange: ', endRange)
+  }
+
+  // If element at mid is greater than x,
+  // search in the left half of mid
+  if (x >= endRange)
+    return recursiveFunction(arr, x, mid + 1, end, debug, ++count);
+
+  if (x < startRange)
+    // If element at mid is smaller than x,
+    // search in the right half of mid
+    return recursiveFunction(arr, x, start, mid - 1, debug, ++count);
+
+  if(debug) console.log('result: ', x + row[0] - startRange)
+  return x + row[0] - startRange;
 }
 
 function populateMapList(listToPopulate) {
