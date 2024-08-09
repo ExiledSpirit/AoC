@@ -4,7 +4,7 @@ const fs = require('node:fs');
 let data;
 
 try {
-  data = fs.readFileSync('./input.txt', 'utf8');
+  data = fs.readFileSync('./sample.txt', 'utf8');
 } catch (err) {
   console.error(err);
   throw err;
@@ -57,18 +57,35 @@ function seedToLocation(seed) {
   seedMappingArray[0] = seed
 
   for (let i = 0; i < mapList.length; i++) {
-    for (let k = 0; k < mapList[i]?.length; k++) {
-      const row = mapList[i][k];
-      const lastMappedValue = seedMappingArray[i]
-
-      if (lastMappedValue >= row[1] && lastMappedValue < row[1] + row[2]) {
+    let listLength = mapList[i].length - 1;
+    let low = 0;
+    let high = listLength;
+    
+    while (seedMappingArray[i + 1] === null && low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const row = mapList[i][mid];
+      const lastMappedValue = seedMappingArray[i];
+    
+      const startRange = row[1];
+      const endRange = row[1] + row[2];
+    
+      if (lastMappedValue > endRange) {
+        high = mid - 1;
+      } else if (lastMappedValue < startRange) {
+        low = mid + 1;
+      } else {
+        console.log('row')
+        console.log(row);
+        console.log(lastMappedValue);
         seedMappingArray[i + 1] = row[0] + lastMappedValue - row[1];
         break;
       }
     }
-
-    if (seedMappingArray[i + 1] === null)
+    
+    if (seedMappingArray[i + 1] === null) {
+      console.log('aqui')
       seedMappingArray[i + 1] = seedMappingArray[i];
+    }
   }
 
   return seedMappingArray;
