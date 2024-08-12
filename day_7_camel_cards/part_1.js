@@ -30,7 +30,7 @@ const CARD_POWERS = {
 }
 
 try {
-  data = fs.readFileSync('./input_2.txt', 'utf8');
+  data = fs.readFileSync('./input.txt', 'utf8');
 } catch (err) {
   console.error(err);
   throw err;

@@ -30,7 +30,7 @@ const CARD_POWERS = {
 }
 
 try {
-  data = fs.readFileSync('./input_2.txt', 'utf8');
+  data = fs.readFileSync('./input.txt', 'utf8');
 } catch (err) {
   console.error(err);
   throw err;
@@ -45,7 +45,6 @@ const handList = data.split('\r\n').map((handIndex) => {
 });
 handList.sort(compareHands)
 
-console.log(handList.filter(hand => hand.hand.split('').includes('J') && hand.rank === 5))
 console.log(calculateTotalBid(handList))
 
 function calculateTotalBid(handSet) {
@@ -76,7 +75,7 @@ function calculateHandRank(hand) {
     const char = hand.charAt(i);
     if (usedChars.some((usedChar) => usedChar.char == char)) continue;
 
-    const charObject = {char, count: numberJokers + 1};
+    const charObject = {char, count: char === 'J' ? 0 : 1};
     const substring = hand.substring(i + 1, hand.length);
 
     for (let c = 0; c < substring.length; c++) {
@@ -88,10 +87,9 @@ function calculateHandRank(hand) {
     usedChars.push(charObject)
   }
 
-  if (usedChars.some(used => used.count > 5)) {
-    console.log(usedChars)
-    console.log(numberJokers)
-  }
+  usedChars.sort((usedA, usedB) => usedA.count - usedB.count);
+  usedChars[usedChars.length - 1].count += numberJokers
+
   const five = usedChars.filter(usedChar => usedChar.count === 5 || usedChar.count === 6).length;
   const four = usedChars.filter(usedChar => usedChar.count === 4).length;
   const three = usedChars.filter(usedChar => usedChar.count === 3).length;
@@ -103,9 +101,8 @@ function calculateHandRank(hand) {
     return HAND_RANKS.four;
   } else if (three) {
     if (two) return HAND_RANKS.full_house;
-    if (three >= 2) return HAND_RANKS.full_house;
     return HAND_RANKS.three
-  } else if (two >= 2) return HAND_RANKS.two_pair;
+  } else if (two == 2) return HAND_RANKS.two_pair;
   else if (two) return HAND_RANKS.two;
   return HAND_RANKS.high_card;
 }
