@@ -14,16 +14,16 @@ const HAND_RANKS = {
 }
 
 const CARD_POWERS = {
-  2: 0,
-  3: 1,
-  4: 2,
-  5: 3,
-  6: 4,
-  7: 5,
-  8: 6,
-  9: 7,
-  T: 8,
-  J: 9,
+  J: 0,
+  2: 1,
+  3: 2,
+  4: 3,
+  5: 4,
+  6: 5,
+  7: 6,
+  8: 7,
+  9: 8,
+  T: 9,
   Q: 10,
   K: 11,
   A: 12
@@ -45,6 +45,7 @@ const handList = data.split('\r\n').map((handIndex) => {
 });
 handList.sort(compareHands)
 
+console.log(handList.filter(hand => hand.hand.split('').includes('J') && hand.rank === 5))
 console.log(calculateTotalBid(handList))
 
 function calculateTotalBid(handSet) {
@@ -70,23 +71,28 @@ function compareHands(handA, handB) {
 
 function calculateHandRank(hand) {
   const usedChars = []
+  const numberJokers = hand.split('').filter(char => char == 'J').length
   for (let i = 0; i < hand.length; i++) {
     const char = hand.charAt(i);
     if (usedChars.some((usedChar) => usedChar.char == char)) continue;
 
-    const charObject = {char, count: 1};
+    const charObject = {char, count: numberJokers + 1};
     const substring = hand.substring(i + 1, hand.length);
 
     for (let c = 0; c < substring.length; c++) {
       const compareChar = substring.charAt(c);
-      if (char == compareChar) {
+      if (char == compareChar && char !== 'J') {
         charObject.count += 1;
       }
     }
     usedChars.push(charObject)
   }
 
-  const five = usedChars.filter(usedChar => usedChar.count === 5).length;
+  if (usedChars.some(used => used.count > 5)) {
+    console.log(usedChars)
+    console.log(numberJokers)
+  }
+  const five = usedChars.filter(usedChar => usedChar.count === 5 || usedChar.count === 6).length;
   const four = usedChars.filter(usedChar => usedChar.count === 4).length;
   const three = usedChars.filter(usedChar => usedChar.count === 3).length;
   const two = usedChars.filter(usedChar => usedChar.count === 2).length;
@@ -97,8 +103,9 @@ function calculateHandRank(hand) {
     return HAND_RANKS.four;
   } else if (three) {
     if (two) return HAND_RANKS.full_house;
+    if (three >= 2) return HAND_RANKS.full_house;
     return HAND_RANKS.three
-  } else if (two === 2) return HAND_RANKS.two_pair;
+  } else if (two >= 2) return HAND_RANKS.two_pair;
   else if (two) return HAND_RANKS.two;
   return HAND_RANKS.high_card;
 }
