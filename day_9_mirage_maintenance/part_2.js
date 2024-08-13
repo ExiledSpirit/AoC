@@ -30,7 +30,7 @@ function calculateNextValue(row) {
     const currentRow = differenceRowList[i];
     const nextRow = differenceRowList[i - 1];
 
-    nextRow.push(nextRow[nextRow.length - 1] + currentRow[currentRow.length - 1]);
+    nextRow.push(nextRow[0] - currentRow[currentRow.length - 1]);
   }
   
   return differenceRowList[0][differenceRowList[0].length - 1]
