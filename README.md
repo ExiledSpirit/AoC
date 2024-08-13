@@ -11,4 +11,5 @@ This project refers to a 25 days challenge (50 puzzles) from [Advent of Code 202
 - [Day 7 Camel Cards](day_7_camel_cards/README.md)
 - [Day 8 Haunted Wasteland](day_8_haunted_wasteland/README.md)
 - [Day 9 Mirage Maintenance](day_9_mirage_maintenance/README.md)
+- [Day 10 Pipe Maze](day_10_pipe_maze/README.md)
  
