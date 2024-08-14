@@ -81,10 +81,11 @@ const PIPE_MAP = {
   }
 }
 
-const loopX = [];
-const loopY = [];
+const loopPoint = [];
+const loopOutline = [];
 
 const startingPoint = getStartingPoint(pipeMazeArray);
+
 const { pipeA, pipeB } = getStartingPipes(pipeMazeArray, startingPoint)
 
 let currentPipe = {x: pipeA.x, y: pipeA.y};
@@ -93,21 +94,53 @@ let previousPipe = {x: startingPoint.x, y: startingPoint.y};
 const loopLength = getLoopLength(pipeMazeArray, currentPipe, previousPipe);
 
 for (let x = 0; x < MAX_X; x++) {
+  for (let y =  0; y < MAX_Y; y++) {
+    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    loopOutline.push({x, y})
+    break;
+  }
+  for (let y =  MAX_Y - 1; y >= 0; y--) {
+    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    loopOutline.push({x, y})
+    break;
+  }
+}
+
+for (let y = 0; y < MAX_Y; y++) {
+  for (let x =  0; x < MAX_X; x++) {
+    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    loopOutline.push({x, y})
+    break;
+  }
+  
+  for (let x =  MAX_X - 1; x >= 0; x--) {
+    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    loopOutline.push({x, y})
+    break;
+  }
+}
+
+console.log(loopOutline)
+
+let countWithin = 0;
+for (let x = 0; x < MAX_X; x++) {
   for (let y = 0; y < MAX_Y; y++) {
-    const inLoop = loopX.some((item, index) => {
-      return item == x && loopY[index] == y
+    const inLoop = loopPoint.some((point) => {
+      return point.x == x && point.y == y
     })
+    // const inLoop = loopOutline.some((item) => item.x == x && item.y == y)
+
     process.stdout.write(`${inLoop ? '\x1b[31m' : '\x1b[30m'}` + pipeMazeArray[x][y]);
   }
   process.stdout.write('\r\n');
 }
 console.log(Math.ceil(loopLength/2))
+console.log(countWithin)
 
 function getLoopLength(maze, currentPipe, previousPipe) {
   let count = 0;
   while (maze[currentPipe.x][currentPipe.y] != 'S') {
-    loopX.push(currentPipe.x);
-    loopY.push(currentPipe.y);
+    loopPoint.push({x: currentPipe.x, y: currentPipe.y});
     count++;
     const currentPipeChar = maze[currentPipe.x][currentPipe.y]
     const previousPipeHolder = previousPipe;
