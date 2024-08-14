@@ -9,3 +9,8 @@ try {
   console.error(err);
   throw err;
 }
+
+const pipeMazeArray = data.split('\r\n').map((row) => row.split(''));
+
+console.log(pipeMazeArray.length);
+console.log(pipeMazeArray[0].length);
