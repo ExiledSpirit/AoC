@@ -95,12 +95,12 @@ const loopLength = getLoopLength(pipeMazeArray, currentPipe, previousPipe);
 
 for (let x = 0; x < MAX_X; x++) {
   for (let y =  0; y < MAX_Y; y++) {
-    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
     loopOutline.push({x, y})
     break;
   }
   for (let y =  MAX_Y - 1; y >= 0; y--) {
-    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
     loopOutline.push({x, y})
     break;
   }
@@ -108,29 +108,40 @@ for (let x = 0; x < MAX_X; x++) {
 
 for (let y = 0; y < MAX_Y; y++) {
   for (let x =  0; x < MAX_X; x++) {
-    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
     loopOutline.push({x, y})
     break;
   }
   
   for (let x =  MAX_X - 1; x >= 0; x--) {
-    if (loopOutline.some((item) => item.x == x && item.y == y) || !loopPoint.some((item) => item.x == x && item.y == y)) continue;
+    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
     loopOutline.push({x, y})
     break;
   }
 }
 
-console.log(loopOutline)
+const newArray = [];
+
+for (let x = 0; x < MAX_X; x++) {
+  for (let y = 0; y < MAX_Y; y++) {
+    const some = loopPoint.some((point) => point.x == x && point.y == y)
+    if (some)
+      newArray.push({x, y});
+  }
+}
+
+console.log(newArray)
 
 let countWithin = 0;
 for (let x = 0; x < MAX_X; x++) {
   for (let y = 0; y < MAX_Y; y++) {
-    const inLoop = loopPoint.some((point) => {
+    const inLoop1 = loopPoint.some((point) => {
       return point.x == x && point.y == y
     })
-    // const inLoop = loopOutline.some((item) => item.x == x && item.y == y)
+    const inLoop = loopOutline.some((item) => item.x == x && item.y == y)
+    const inside = checkPointInPolygon({x, y}, newArray);
 
-    process.stdout.write(`${inLoop ? '\x1b[31m' : '\x1b[30m'}` + pipeMazeArray[x][y]);
+    process.stdout.write(`${inLoop ? '\x1b[31m' : inLoop1 ? '\x1b[32m' : inside ? '\x1b[33m' : '\x1b[30m'}` + pipeMazeArray[x][y]);
   }
   process.stdout.write('\r\n');
 }
@@ -192,4 +203,28 @@ function getStartingPoint(maze) {
   }
 
   return {x: -1, y: -1};
+}
+
+function checkPointInPolygon(inPoint, maze) {
+	const numOfVertices = maze.length;
+
+	const x = inPoint.x
+	const y = inPoint.y
+	let inside = false
+	let p1 = maze[0]
+  for (let i = 1; i < maze.length; i++) {
+    let p2 = maze[i];
+    if (y > Math.min(p1.y, p2.y)) {
+      if (y <= Math.max(p1.y, p2.y)) {
+        if (x <= Math.max(p1.x, p2.x)) {
+          const xIntersection = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;
+          if (p1.x === p2.x || x >= xIntersection) {
+            inside = !inside;
+          }
+        }
+      }
+    }
+    p1 = p2;
+  }
+  return inside
 }
