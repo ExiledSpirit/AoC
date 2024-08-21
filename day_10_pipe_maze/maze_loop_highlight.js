@@ -1,230 +1,135 @@
 // Reading the data
 const fs = require('node:fs');
 
-let data;
+let input;
 
 try {
-  data = fs.readFileSync('./input.txt', 'utf8');
+  input = fs.readFileSync('./input.txt', 'utf8');
 } catch (err) {
   console.error(err);
   throw err;
 }
 
-const pipeMazeArray = data.split('\r\n').map((row) => row.split(''));
+// Reading and processing the input data
+let data = input.split('\n').map(line => line.trim());
 
-const MAX_X = pipeMazeArray.length;
-const MAX_Y = pipeMazeArray[0].length;
+// Assuming 'DATA' is similar to some predefined or hardcoded data
+// data = DATA.split('\n').map(line => line.trim());
 
-console.log(pipeMazeArray.length);
-console.log(pipeMazeArray[0].length);
+let grid = data.map(line => line.split(''));
 
-const PIPE_MAP = {
-  'F': { 
-    exitA: {
-      x: 0,
-      y: 1
-    },
-    exitB: {
-      x: 1,
-      y: 0
+const MAX_X = grid.length;
+const MAX_Y = grid[0].length;
+
+// Finding the start position 'S'
+let start = null;
+grid.forEach((row, x) => {
+  row.forEach((cell, y) => {
+    if (cell === 'S') {
+      start = [x, y];
     }
-  },
-  '7': { 
-    exitA: {
-      x: 0,
-      y: -1
-    },
-    exitB: {
-      x: 1,
-      y: 0
-    }
-  },
-  'J': { 
-    exitA: {
-      x: 0,
-      y: -1
-    },
-    exitB: {
-      x: -1,
-      y: 0
-    }
-  },
-  '|': { 
-    exitA: {
-      x: -1,
-      y: 0
-    },
-    exitB: {
-      x: 1,
-      y: 0
-    }
-  },
-  'L': { 
-    exitA: {
-      x: 0,
-      y: 1
-    },
-    exitB: {
-      x: -1,
-      y: 0
-    }
-  },
-  '-': { 
-    exitA: {
-      x: 0,
-      y: -1
-    },
-    exitB: {
-      x: 0,
-      y: 1
-    }
-  }
+  });
+});
+console.log(start);
+
+// Direction mappings
+const DIRS = {
+  "J": [[-1, 0], [0, -1]],
+  "L": [[-1, 0], [0, 1]],
+  "7": [[0, -1], [1, 0]],
+  "F": [[0, 1],  [1, 0]],
+  "|": [[-1, 0], [1, 0]],
+  "-": [[0, -1], [0, 1]],
+  ".": [],
+  "S": []
+};
+
+// Function to get neighbors based on the pipe direction
+function neighbors(grid, point) {
+  let [x, y] = point;
+  let pipe = grid[x][y];
+  return DIRS[pipe].map(([dx, dy]) => [x + dx, y + dy]);
 }
 
-const loopPoint = [];
-const loopOutline = [];
+// Finding start exits
+let start_exits = [];
 
-const startingPoint = getStartingPoint(pipeMazeArray);
-
-const { pipeA, pipeB } = getStartingPipes(pipeMazeArray, startingPoint)
-
-let currentPipe = {x: pipeA.x, y: pipeA.y};
-let previousPipe = {x: startingPoint.x, y: startingPoint.y};
-
-const loopLength = getLoopLength(pipeMazeArray, currentPipe, previousPipe);
-
-for (let x = 0; x < MAX_X; x++) {
-  for (let y =  0; y < MAX_Y; y++) {
-    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
-    loopOutline.push({x, y})
-    break;
+[[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => {
+  let s_neighbor = [start[0] + dx, start[1] + dy];
+  if (neighbors(grid, s_neighbor).some(([nx, ny]) => nx === start[0] && ny === start[1])) {
+    start_exits.push(s_neighbor);
   }
-  for (let y =  MAX_Y - 1; y >= 0; y--) {
-    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
-    loopOutline.push({x, y})
-    break;
-  }
+});
+
+let start_point = start_exits[0];
+let pipe = new Set([JSON.stringify(start), JSON.stringify(start_point)]);
+
+while (JSON.stringify(start_point) !== JSON.stringify(start_exits[start_exits.length - 1])) {
+  let ns = neighbors(grid, start_point);
+  ns.forEach(neighbor => {
+    if (!pipe.has(JSON.stringify(neighbor))) {
+      pipe.add(JSON.stringify(neighbor));
+      start_point = neighbor;
+    }
+  });
 }
+console.log(`Part 1, ${pipe.size / 2}`);
 
-for (let y = 0; y < MAX_Y; y++) {
-  for (let x =  0; x < MAX_X; x++) {
-    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
-    loopOutline.push({x, y})
-    break;
-  }
-  
-  for (let x =  MAX_X - 1; x >= 0; x--) {
-    if (!loopPoint.some((item) => item.x == x && item.y == y)) continue;
-    loopOutline.push({x, y})
-    break;
-  }
-}
+// Creating and filling the clean grid
+let clean_grid = Array.from({ length: grid.length }, () => Array(grid[0].length).fill(' '));
 
-const newArray = [];
+pipe.forEach(coordStr => {
+  let [x, y] = JSON.parse(coordStr);
+  clean_grid[x][y] = grid[x][y];
+});
+
+// Counting inside cells
+let inside_cells = Array.from({ length: grid.length }, () => Array(grid[0].length).fill(null));
+let inside = 0;
+
+clean_grid.forEach((row, x) => {
+  process.stdout.write(`${x}: `);
+  row.forEach((cell, y) => {
+    process.stdout.write(cell);
+
+    // Skip cells on the pipeline
+    if (pipe.has(JSON.stringify([x, y]))) return;
+
+    let north = 0;
+    let south = 0;
+
+    for (let y2 = y; y2 < row.length; y2++) {
+      // Count north facing blockers (hacked S!)
+      if (["J", "L", "|", "S"].includes(clean_grid[x][y2])) {
+        north += 1;
+      }
+
+      // Count south facing blockers (hacked S!)
+      if (["F", "7", "|", "S"].includes(clean_grid[x][y2])) {
+        south += 1;
+      }
+    }
+
+    if (Math.min(north, south) % 2 === 1) {
+      inside += 1;
+      inside_cells[x][y] = grid[x][y];
+    }
+  });
+  process.stdout.write("$\n");
+});
+
+console.log(inside);
 
 for (let x = 0; x < MAX_X; x++) {
   for (let y = 0; y < MAX_Y; y++) {
-    const some = loopPoint.some((point) => point.x == x && point.y == y)
-    if (some)
-      newArray.push({x, y});
-  }
-}
+    let inLoop = false; 
+    pipe.forEach((coordStr) => {
+      let [xI, yI] = JSON.parse(coordStr);
+      if (xI == x && yI == y) inLoop = true;
+    });
 
-console.log(newArray)
-
-let countWithin = 0;
-for (let x = 0; x < MAX_X; x++) {
-  for (let y = 0; y < MAX_Y; y++) {
-    const inLoop1 = loopPoint.some((point) => {
-      return point.x == x && point.y == y
-    })
-    const inLoop = loopOutline.some((item) => item.x == x && item.y == y)
-    const inside = checkPointInPolygon({x, y}, newArray);
-
-    process.stdout.write(`${inLoop ? '\x1b[31m' : inLoop1 ? '\x1b[32m' : inside ? '\x1b[33m' : '\x1b[30m'}` + pipeMazeArray[x][y]);
+    let inside = !!inside_cells[x][y];
+    process.stdout.write(`${inLoop ? '\x1b[32m' : inside ? '\x1b[33m' : '\x1b[30m'}` + grid[x][y]);
   }
   process.stdout.write('\r\n');
-}
-console.log(Math.ceil(loopLength/2))
-console.log(countWithin)
-
-function getLoopLength(maze, currentPipe, previousPipe) {
-  let count = 0;
-  while (maze[currentPipe.x][currentPipe.y] != 'S') {
-    loopPoint.push({x: currentPipe.x, y: currentPipe.y});
-    count++;
-    const currentPipeChar = maze[currentPipe.x][currentPipe.y]
-    const previousPipeHolder = previousPipe;
-    const {exitA, exitB} = PIPE_MAP[currentPipeChar]
-    // console.log(currentPipeChar)
-    let nextX = currentPipe.x + exitA.x;
-    let nextY = currentPipe.y + exitA.y;
-
-    if (nextX == previousPipeHolder.x && nextY == previousPipeHolder.y){
-      nextX = currentPipe.x + exitB.x;
-      nextY = currentPipe.y + exitB.y;
-    }
-
-    previousPipe = currentPipe;
-    currentPipe = {x: nextX, y: nextY};
-  }
-  return count;
-}
-
-function getStartingPipes(maze, startingPoint) {
-  const pipes = []
-  for (let x = -1; x < 2; x++) {
-    for (let y = -1; y < 2; y++) {
-      const pipe = maze[startingPoint.x + x][startingPoint.y + y];
-      const pipeDirections = PIPE_MAP[pipe];
-
-      if (!pipeDirections) continue;
-      if (startingPoint.x === startingPoint.x + x + pipeDirections.exitA.x &&
-        startingPoint.y === startingPoint.y + y + pipeDirections.exitA.y ||
-        startingPoint.x === startingPoint.x + x + pipeDirections.exitB.x &&
-        startingPoint.y === startingPoint.y + y + pipeDirections.exitB.y
-      ) {
-        pipes.push({x: startingPoint.x + x, y: startingPoint.y + y})
-      }
-    }
-  }
-  console.log(pipes)
-  return {
-    pipeA: pipes[0],
-    pipeB: pipes[1]
-  }
-}
-
-function getStartingPoint(maze) {
-  for (let x = 0; x < MAX_X; x++) {
-    for (let y = 0; y < MAX_Y; y++) {
-      if (maze[x][y] === 'S') return {x, y};
-    }
-  }
-
-  return {x: -1, y: -1};
-}
-
-function checkPointInPolygon(inPoint, maze) {
-	const numOfVertices = maze.length;
-
-	const x = inPoint.x
-	const y = inPoint.y
-	let inside = false
-	let p1 = maze[0]
-  for (let i = 1; i < maze.length; i++) {
-    let p2 = maze[i];
-    if (y > Math.min(p1.y, p2.y)) {
-      if (y <= Math.max(p1.y, p2.y)) {
-        if (x <= Math.max(p1.x, p2.x)) {
-          const xIntersection = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;
-          if (p1.x === p2.x || x >= xIntersection) {
-            inside = !inside;
-          }
-        }
-      }
-    }
-    p1 = p2;
-  }
-  return inside
 }
