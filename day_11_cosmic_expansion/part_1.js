@@ -3,7 +3,7 @@ const fs = require('node:fs');
 let data;
 
 try {
-    data = fs.readFileSync('./input.txt', 'utf-8');
+    data = fs.readFileSync('./sample.txt', 'utf-8');
 } catch (err) {
     console.error(err);
     throw err;
@@ -37,6 +37,7 @@ for (let x = 0; x < GRID_X; x++) {
 
 const MAX_X = GRID_X + rowsToExpand.length;
 const MAX_Y = GRID_Y + colsToExpand.length;
+const GALAXY_EXPANSION_SPEED = 1;
 
 const galaxyList = [];
 const expandedGrid = Array.from({ length: MAX_X }, () => Array(MAX_Y).fill('.'));
@@ -50,7 +51,7 @@ for (let x = 0; x < GRID_X; x++) {
     for (let y = 0; y < GRID_Y; y++) {
         if (colsToExpand.includes(y)) colCount++;
         expandedGrid[x+rowCount][y+colCount] = grid[x][y];
-        if (grid[x][y] == '#') galaxyList.push([x+rowCount, y+colCount]);
+        if (grid[x][y] == '#') galaxyList.push([x, y]);
     }
 }
 
@@ -62,8 +63,13 @@ function galaxyDistanceSum(galaxySet) {
         for (let y = x + 1; y < galaxySet.length; y++) {
             totalPairs++;
             const yGalaxy = galaxySet[y];
-            const xDistance = yGalaxy[0] - xGalaxy[0];
-            const yDistance = yGalaxy[1] > xGalaxy[1] ? yGalaxy[1] - xGalaxy[1] : xGalaxy[1] - yGalaxy[1];
+            const greatestX = yGalaxy[0];
+            const smallestX = xGalaxy[0];
+            const greatestY = xGalaxy[1] > yGalaxy[1] ? xGalaxy[1] : yGalaxy[1];
+            const smallestY = xGalaxy[1] > yGalaxy[1] ? yGalaxy[1] : xGalaxy[1];
+
+            const xDistance = greatestX - smallestX + rowsToExpand.filter((row) => row > smallestX && row < greatestX).length * (GALAXY_EXPANSION_SPEED);
+            const yDistance = greatestY - smallestY + colsToExpand.filter((col) => col > smallestY && col < greatestY).length * (GALAXY_EXPANSION_SPEED);
             const xySum = xDistance + yDistance;
             totalSum += xySum;
         }
@@ -73,18 +79,5 @@ function galaxyDistanceSum(galaxySet) {
 }
 
 console.log(galaxyDistanceSum(galaxyList));
-
-function printGrid(gridArray) {
-    const MAX_I = gridArray.length;
-    const MAX_J = gridArray[0].length;
-
-    for (let x = 0; x < MAX_I; x++) {
-        process.stdout.write(`${x}: `);
-        for (let y = 0; y < MAX_J; y++) {
-            process.stdout.write(gridArray[x][y]);
-        }
-        process.stdout.write('\n');
-    }
-}
 
 // Pair combinations = n * (n - 1) / 2
