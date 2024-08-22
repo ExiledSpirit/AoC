@@ -12,4 +12,4 @@ This project refers to a 25 days challenge (50 puzzles) from [Advent of Code 202
 - [Day 8 Haunted Wasteland](day_8_haunted_wasteland/README.md)
 - [Day 9 Mirage Maintenance](day_9_mirage_maintenance/README.md)
 - [Day 10 Pipe Maze](day_10_pipe_maze/README.md)
- 
+- [Day 11 Cosmic Expansion](day_11_cosmic_expansion/README.md)
